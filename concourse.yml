@@ -1,0 +1,34 @@
+resources:
+
+- name: repo
+  type: git
+  source:
+    uri: https://github.com/ndarilek/elixir-janus
+    branch: master
+
+jobs:
+
+- name: test
+  public: true
+  plan:
+
+  - get: repo
+    trigger: true
+
+  - task: run tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: elixir, tag: "latest"}
+      inputs:
+        - name: repo
+      run:
+        path: sh
+        args:
+          - -exc
+          - |
+            cd repo
+            mix local.hex --force
+            mix deps.get
+            mix test
