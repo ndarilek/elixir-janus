@@ -29,7 +29,8 @@ defmodule Janus.Mixfile do
   defp deps do
     [
       {:httpoison, "~> 0.10.0"},
-      {:poison, "~> 3.0"}
+      {:poison, "~> 3.0"},
+      {:bypass, "~> 0.1", only: :test}
     ]
   end
 end
