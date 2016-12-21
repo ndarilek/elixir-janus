@@ -30,6 +30,14 @@ defmodule Janus.Plugin do
     quote do
       def handle_event(pid, data, jsep \\ nil), do: nil
       defoverridable [handle_event: 3]
+      def handle_webrtcup(pid), do: nil
+      defoverridable [handle_webrtcup: 1]
+      def handle_media(pid, type, receiving), do: nil
+      defoverridable [handle_media: 3]
+      def handle_slowlink(pid, uplink, nacks), do: nil
+      defoverridable [handle_slowlink: 3]
+      def handle_hangup(pid, reason \\ nil), do: nil
+      defoverridable [handle_hangup: 2]
     end
   end
 

@@ -75,12 +75,33 @@ defmodule Janus.Session do
         {:ok, data} ->
           if session.callbacks do
             case data do
-              %{janus: :keepalive} -> session.callbacks.handle_keepalive(pid)
-              %{janus: :event, sender: sender, plugindata: plugindata} ->
+              %{janus: "keepalive"} -> session.callbacks.handle_keepalive(pid)
+              %{janus: "event", sender: sender, plugindata: plugindata} ->
                 plugin_pid = session.handles[sender]
                 if plugin_pid do
-                  jsep = Map.get(data, :jsep)
+                  jsep = data[:jsep]
                   session.callbacks.handle_event(plugin_pid, plugindata.data, jsep)
+                end
+              %{janus: "webrtcup", sender: sender} ->
+                plugin_pid = session.handles[sender]
+                if plugin_pid do
+                  session.callbacks.handle_webrtcup(plugin_pid)
+                end
+              %{janus: "media", sender: sender, type: type, receiving: receiving} ->
+                plugin_pid = session.handles[sender]
+                if plugin_pid do
+                  session.callbacks.handle_media(plugin_pid, type, receiving)
+                end
+              %{janus: "slowlink", sender: sender, uplink: uplink, nacks: nacks} ->
+                plugin_pid = session.handles[sender]
+                if plugin_pid do
+                  session.callbacks.handle_slowlink(plugin_pid, uplink, nacks)
+                end
+              %{janus: "hangup", sender: sender} ->
+                plugin_pid = session.handles[sender]
+                if plugin_pid do
+                  reason = data[:reason]
+                  session.callbacks.handle_hangup(plugin_pid, reason)
                 end
               _ -> nil
             end
