@@ -4,22 +4,23 @@ import Janus.Util
 
 defmodule Janus.Session do
 
-  @enforce_keys [:id, :base_url]
+  @enforce_keys [:id, :base_url, :event_manager]
   defstruct [
     :id,
     :base_url,
-    :callbacks,
+    :event_manager,
     handles: %{}
   ]
 
-  def start(url, callbacks \\ nil) do
+  def start(url) do
     case post(url, %{janus: :create}) do
       {:ok, body} ->
         id = body.data.id
+        {:ok, event_manager} = GenEvent.start_link()
         session = %Janus.Session{
           id: id,
           base_url: "#{url}/#{id}",
-          callbacks: callbacks
+          event_manager: event_manager
         }
         {:ok, pid} = Agent.start(fn -> session end)
         poll(pid, session)
@@ -28,15 +29,16 @@ defmodule Janus.Session do
     end
   end
 
-  def attach_plugin(pid, id, callbacks \\ nil) do
+  def attach_plugin(pid, id) do
     base_url = Agent.get(pid, &(&1.base_url))
     v = case post(base_url, %{janus: :attach, plugin: id}) do
       {:ok, body} ->
         id = body.data.id
+        {:ok, event_manager} = GenEvent.start_link()
         plugin = %Janus.Plugin{
           id: id,
           base_url: "#{base_url}/#{id}",
-          callbacks: callbacks
+          event_manager: event_manager
         }
         {:ok, plugin_pid} = Agent.start(fn -> plugin end)
         Agent.update pid, fn(session) ->
@@ -62,49 +64,45 @@ defmodule Janus.Session do
     post(base_url, %{janus: :destroy})
   end
 
-  defmacro __using__(_) do
-    quote do
-      def handle_keepalive(pid), do: nil
-      defoverridable [handle_keepalive: 1]
-    end
-  end
+  def add_handler(session, handler, args), do: Agent.get session, &(GenEvent.add_handler(&1.event_handler, handler, args))
+
+  def add_mon_handler(session, handler, args), do: Agent.get session, &(GenEvent.add_mon_handler(&1.event_handler, handler, args))
+
+  def call(session, handler, timeout, request \\ 5000), do: Agent.get session, &(GenEvent.call(&1.event_handler, handler, request, timeout))
+
+  def remove_handler(session, handler, args), do: Agent.get session, &(GenEvent.remove_handler(&1.event_handler, handler, args))
+
+  def stream(session, options \\ []), do: Agent.get session, &(GenEvent.stream(&1.event_handler, options))
+
+  def swap_handler(session, handler1, args1, handler2, args2), do: Agent.get session, &(GenEvent.swap_handler(&1.event_handler, handler1, args1, handler2, args2))
+
+  def swap_mon_handler(session, handler1, args1, handler2, args2), do: Agent.get session, &(GenEvent.swap_mon_handler(&1.event_handler, handler1, args1, handler2, args2))
+
+  def which_handlers(session), do: Agent.get session, &(GenEvent.which_handlers(&1.event_handler))
 
   defp poll(pid, session) do
     spawn fn ->
       case get(session.base_url) do
         {:ok, data} ->
-          if session.callbacks do
-            case data do
-              %{janus: "keepalive"} -> session.callbacks.handle_keepalive(pid)
-              %{janus: "event", sender: sender, plugindata: plugindata} ->
-                plugin_pid = session.handles[sender]
-                if plugin_pid do
-                  jsep = data[:jsep]
-                  session.callbacks.handle_event(plugin_pid, plugindata.data, jsep)
+          event_manager = session.event_manager
+          case data do
+            %{janus: "keepalive"} -> GenEvent.notify(event_manager, {:keepalive})
+            %{sender: sender} ->
+              plugin_pid = session.handles[sender]
+              if plugin_pid do
+                case data do
+                  %{janus: "event", plugindata: plugindata} ->
+                    jsep = data[:jsep]
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:event, plugindata.data, jsep}))
+                  %{janus: "webrtcup"} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:webrtcup}))
+                  %{janus: "media", type: type, receiving: receiving} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:media, type, receiving}))
+                  %{janus: "slowlink", uplink: uplink, nacks: nacks} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:slowlink, uplink, nacks}))
+                  %{janus: "hangup"} ->
+                    reason = data[:reason]
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:hangup, reason}))
                 end
-              %{janus: "webrtcup", sender: sender} ->
-                plugin_pid = session.handles[sender]
-                if plugin_pid do
-                  session.callbacks.handle_webrtcup(plugin_pid)
-                end
-              %{janus: "media", sender: sender, type: type, receiving: receiving} ->
-                plugin_pid = session.handles[sender]
-                if plugin_pid do
-                  session.callbacks.handle_media(plugin_pid, type, receiving)
-                end
-              %{janus: "slowlink", sender: sender, uplink: uplink, nacks: nacks} ->
-                plugin_pid = session.handles[sender]
-                if plugin_pid do
-                  session.callbacks.handle_slowlink(plugin_pid, uplink, nacks)
-                end
-              %{janus: "hangup", sender: sender} ->
-                plugin_pid = session.handles[sender]
-                if plugin_pid do
-                  reason = data[:reason]
-                  session.callbacks.handle_hangup(plugin_pid, reason)
-                end
-              _ -> nil
-            end
+              end
+            _ -> nil
           end
           poll(pid, session)
         {:error, reason} -> Logger.error(reason)

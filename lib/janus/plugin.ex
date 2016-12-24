@@ -2,11 +2,11 @@ import Janus.Util
 
 defmodule Janus.Plugin do
 
-  @enforce_keys [:id, :base_url]
+  @enforce_keys [:id, :base_url, :event_manager]
   defstruct [
     :id,
     :base_url,
-    :callbacks,
+    :event_manager
   ]
 
   def message(pid, body, jsep \\ nil) do
@@ -26,19 +26,20 @@ defmodule Janus.Plugin do
     end
   end
 
-  defmacro __using__(_) do
-    quote do
-      def handle_event(pid, data, jsep \\ nil), do: nil
-      defoverridable [handle_event: 3]
-      def handle_webrtcup(pid), do: nil
-      defoverridable [handle_webrtcup: 1]
-      def handle_media(pid, type, receiving), do: nil
-      defoverridable [handle_media: 3]
-      def handle_slowlink(pid, uplink, nacks), do: nil
-      defoverridable [handle_slowlink: 3]
-      def handle_hangup(pid, reason \\ nil), do: nil
-      defoverridable [handle_hangup: 2]
-    end
-  end
+  def add_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.add_handler(&1.event_handler, handler, args))
+
+  def add_mon_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.add_mon_handler(&1.event_handler, handler, args))
+
+  def call(plugin, handler, timeout, request \\ 5000), do: Agent.get plugin, &(GenEvent.call(&1.event_handler, handler, request, timeout))
+
+  def remove_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.remove_handler(&1.event_handler, handler, args))
+
+  def stream(plugin, options \\ []), do: Agent.get plugin, &(GenEvent.stream(&1.event_handler, options))
+
+  def swap_handler(plugin, handler1, args1, handler2, args2), do: Agent.get plugin, &(GenEvent.swap_handler(&1.event_handler, handler1, args1, handler2, args2))
+
+  def swap_mon_handler(plugin, handler1, args1, handler2, args2), do: Agent.get plugin, &(GenEvent.swap_mon_handler(&1.event_handler, handler1, args1, handler2, args2))
+
+  def which_handlers(plugin), do: Agent.get plugin, &(GenEvent.which_handlers(&1.event_handler))
 
 end
