@@ -12,7 +12,7 @@ defmodule Janus.Session do
     handles: %{}
   ]
 
-  def start(url) do
+  def start(url, args \\ []) do
     case post(url, %{janus: :create}) do
       {:ok, body} ->
         id = body.data.id
@@ -23,7 +23,9 @@ defmodule Janus.Session do
           event_manager: event_manager
         }
         {:ok, pid} = Agent.start(fn -> session end)
-        poll(pid, session)
+        if args[:start_polling] == nil or args[:start_polling] do
+          start_polling(pid)
+        end
         {:ok, pid}
       v -> v
     end
@@ -80,7 +82,8 @@ defmodule Janus.Session do
 
   def which_handlers(session), do: Agent.get session, &(GenEvent.which_handlers(&1.event_handler))
 
-  defp poll(pid, session) do
+  def start_polling(pid) do
+    session = Agent.get pid, &(&1)
     spawn fn ->
       case get(session.base_url) do
         {:ok, data} ->
@@ -104,7 +107,7 @@ defmodule Janus.Session do
               end
             _ -> nil
           end
-          poll(pid, session)
+          start_polling(pid)
         {:error, reason} -> Logger.error(reason)
         {:error, :invalid, _} -> nil
       end
