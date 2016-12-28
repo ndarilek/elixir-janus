@@ -10,19 +10,17 @@ defmodule Janus.Plugin do
   ]
 
   def message(pid, body, jsep \\ nil) do
-    Agent.get pid, fn(plugin) ->
-      msg = %{body: body}
-      if jsep, do: Map.put(msg, :jsep, jsep)
-      post(plugin.base_url, msg)
-    end
+    plugin = Agent.get(pid, &(&1))
+    msg = %{body: body}
+    if jsep, do: Map.put(msg, :jsep, jsep)
+    post(plugin.base_url, msg)
   end
 
   def hangup(pid) do
-    Agent.get pid, fn(plugin) ->
-      case post(plugin.base_url, %{janus: :hangup}) do
-        {:ok, _} -> :ok
-        v -> v
-      end
+    plugin = Agent.get(pid, &(&1))
+    case post(plugin.base_url, %{janus: :hangup}) do
+      {:ok, _} -> :ok
+      v -> v
     end
   end
 
