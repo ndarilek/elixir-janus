@@ -73,21 +73,21 @@ defmodule Janus.Session do
     post(base_url, %{janus: :destroy})
   end
 
-  def add_handler(session, handler, args), do: Agent.get session, &(GenEvent.add_handler(&1.event_handler, handler, args))
+  def add_handler(session, handler, args), do: Agent.get session, &(GenEvent.add_handler(&1.event_manager, handler, args))
 
-  def add_mon_handler(session, handler, args), do: Agent.get session, &(GenEvent.add_mon_handler(&1.event_handler, handler, args))
+  def add_mon_handler(session, handler, args), do: Agent.get session, &(GenEvent.add_mon_handler(&1.event_manager, handler, args))
 
-  def call(session, handler, timeout, request \\ 5000), do: Agent.get session, &(GenEvent.call(&1.event_handler, handler, request, timeout))
+  def call(session, handler, timeout, request \\ 5000), do: Agent.get session, &(GenEvent.call(&1.event_manager, handler, request, timeout))
 
-  def remove_handler(session, handler, args), do: Agent.get session, &(GenEvent.remove_handler(&1.event_handler, handler, args))
+  def remove_handler(session, handler, args), do: Agent.get session, &(GenEvent.remove_handler(&1.event_manager, handler, args))
 
-  def stream(session, options \\ []), do: Agent.get session, &(GenEvent.stream(&1.event_handler, options))
+  def stream(session, options \\ []), do: Agent.get session, &(GenEvent.stream(&1.event_manager, options))
 
-  def swap_handler(session, handler1, args1, handler2, args2), do: Agent.get session, &(GenEvent.swap_handler(&1.event_handler, handler1, args1, handler2, args2))
+  def swap_handler(session, handler1, args1, handler2, args2), do: Agent.get session, &(GenEvent.swap_handler(&1.event_manager, handler1, args1, handler2, args2))
 
-  def swap_mon_handler(session, handler1, args1, handler2, args2), do: Agent.get session, &(GenEvent.swap_mon_handler(&1.event_handler, handler1, args1, handler2, args2))
+  def swap_mon_handler(session, handler1, args1, handler2, args2), do: Agent.get session, &(GenEvent.swap_mon_handler(&1.event_manager, handler1, args1, handler2, args2))
 
-  def which_handlers(session), do: Agent.get session, &(GenEvent.which_handlers(&1.event_handler))
+  def which_handlers(session), do: Agent.get session, &(GenEvent.which_handlers(&1.event_manager))
 
   defp poll(pid) do
     session = Agent.get pid, &(&1)

@@ -26,20 +26,20 @@ defmodule Janus.Plugin do
     end
   end
 
-  def add_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.add_handler(&1.event_handler, handler, args))
+  def add_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.add_handler(&1.event_manager, handler, args))
 
-  def add_mon_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.add_mon_handler(&1.event_handler, handler, args))
+  def add_mon_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.add_mon_handler(&1.event_manager, handler, args))
 
-  def call(plugin, handler, timeout, request \\ 5000), do: Agent.get plugin, &(GenEvent.call(&1.event_handler, handler, request, timeout))
+  def call(plugin, handler, timeout, request \\ 5000), do: Agent.get plugin, &(GenEvent.call(&1.event_manager, handler, request, timeout))
 
-  def remove_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.remove_handler(&1.event_handler, handler, args))
+  def remove_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.remove_handler(&1.event_manager, handler, args))
 
-  def stream(plugin, options \\ []), do: Agent.get plugin, &(GenEvent.stream(&1.event_handler, options))
+  def stream(plugin, options \\ []), do: Agent.get plugin, &(GenEvent.stream(&1.event_manager, options))
 
-  def swap_handler(plugin, handler1, args1, handler2, args2), do: Agent.get plugin, &(GenEvent.swap_handler(&1.event_handler, handler1, args1, handler2, args2))
+  def swap_handler(plugin, handler1, args1, handler2, args2), do: Agent.get plugin, &(GenEvent.swap_handler(&1.event_manager, handler1, args1, handler2, args2))
 
-  def swap_mon_handler(plugin, handler1, args1, handler2, args2), do: Agent.get plugin, &(GenEvent.swap_mon_handler(&1.event_handler, handler1, args1, handler2, args2))
+  def swap_mon_handler(plugin, handler1, args1, handler2, args2), do: Agent.get plugin, &(GenEvent.swap_mon_handler(&1.event_manager, handler1, args1, handler2, args2))
 
-  def which_handlers(plugin), do: Agent.get plugin, &(GenEvent.which_handlers(&1.event_handler))
+  def which_handlers(plugin), do: Agent.get plugin, &(GenEvent.which_handlers(&1.event_manager))
 
 end
