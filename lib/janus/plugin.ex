@@ -27,9 +27,9 @@ defmodule Janus.Plugin do
   def trickle(pid, candidates \\ nil) do
     msg = %{janus: :trickle}
     case candidates do
-      nil -> Map.set(msg, :candidate, %{completed: true})
-      v when is_list(v) -> Map.set(msg, :candidates, v)
-      v when is_map(v) -> Map.set(msg, :candidate, v)
+      nil -> Map.put(msg, :candidate, %{completed: true})
+      v when is_list(v) -> Map.put(msg, :candidates, v)
+      v when is_map(v) -> Map.put(msg, :candidate, v)
     end
     plugin = Agent.get(pid, &(&1))
     post(plugin.base_url, msg)
