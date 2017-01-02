@@ -35,6 +35,12 @@ defmodule Janus.Plugin do
     post(plugin.base_url, msg)
   end
 
+  def detach(pid) do
+    base_url = Agent.get(pid, &(&1.base_url))
+    post(base_url, %{janus: :detach})
+    Agent.stop(pid)
+  end
+
   def add_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.add_handler(&1.event_manager, handler, args))
 
   def add_mon_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.add_mon_handler(&1.event_manager, handler, args))
