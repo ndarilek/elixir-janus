@@ -63,7 +63,7 @@ defmodule Janus.Session do
   def destroy(pid) do
     base_url = Agent.get(pid, &(&1.base_url))
     plugin_pids = Agent.get(pid, &(&1.handles)) |> Map.values()
-    plugin_pids.each(&(Plugin.detach(&1)))
+    plugin_pids.each(&(Janus.Plugin.detach(&1)))
     Agent.stop(pid)
     post(base_url, %{janus: :destroy})
   end
