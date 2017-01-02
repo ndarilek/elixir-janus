@@ -68,20 +68,28 @@ defmodule Janus.Session do
     post(base_url, %{janus: :destroy})
   end
 
+  @doc "See `GenEvent.add_handler/3`."
   def add_handler(session, handler, args), do: Agent.get session, &(GenEvent.add_handler(&1.event_manager, handler, args))
 
+  @doc "See `GenEvent.add_mon_handler/3`."
   def add_mon_handler(session, handler, args), do: Agent.get session, &(GenEvent.add_mon_handler(&1.event_manager, handler, args))
 
+  @doc "See `GenEvent.call/4`."
   def call(session, handler, timeout, request \\ 5000), do: Agent.get session, &(GenEvent.call(&1.event_manager, handler, request, timeout))
 
+  @doc "See `GenEvent.remove_handler/3`."
   def remove_handler(session, handler, args), do: Agent.get session, &(GenEvent.remove_handler(&1.event_manager, handler, args))
 
+  @doc "See `GenEvent.stream/2`."
   def stream(session, options \\ []), do: Agent.get session, &(GenEvent.stream(&1.event_manager, options))
 
+  @doc "See `GenEvent.swap_handler/5`."
   def swap_handler(session, handler1, args1, handler2, args2), do: Agent.get session, &(GenEvent.swap_handler(&1.event_manager, handler1, args1, handler2, args2))
 
+  @doc "See `GenEvent.swap_mon_handler/5`."
   def swap_mon_handler(session, handler1, args1, handler2, args2), do: Agent.get session, &(GenEvent.swap_mon_handler(&1.event_manager, handler1, args1, handler2, args2))
 
+  @doc "See `GenEvent.which_handlers/1`."
   def which_handlers(session), do: Agent.get session, &(GenEvent.which_handlers(&1.event_manager))
 
   defp poll(pid) do
