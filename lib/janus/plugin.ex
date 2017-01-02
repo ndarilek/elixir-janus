@@ -41,20 +41,28 @@ defmodule Janus.Plugin do
     Agent.stop(pid)
   end
 
+  @doc "See `GenEvent.add_handler/3`."
   def add_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.add_handler(&1.event_manager, handler, args))
 
+  @doc "See `GenEvent.add_mon_handler/3`."
   def add_mon_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.add_mon_handler(&1.event_manager, handler, args))
 
+  @doc "See `GenEvent.call/4`."
   def call(plugin, handler, timeout, request \\ 5000), do: Agent.get plugin, &(GenEvent.call(&1.event_manager, handler, request, timeout))
 
+  @doc "See `GenEvent.remove_handler/3`."
   def remove_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.remove_handler(&1.event_manager, handler, args))
 
+  @doc "See `GenEvent.stream/2`."
   def stream(plugin, options \\ []), do: Agent.get plugin, &(GenEvent.stream(&1.event_manager, options))
 
+  @doc "See `GenEvent.swap_handler/5`."
   def swap_handler(plugin, handler1, args1, handler2, args2), do: Agent.get plugin, &(GenEvent.swap_handler(&1.event_manager, handler1, args1, handler2, args2))
 
+  @doc "See `GenEvent.swap_mon_handler/5`."
   def swap_mon_handler(plugin, handler1, args1, handler2, args2), do: Agent.get plugin, &(GenEvent.swap_mon_handler(&1.event_manager, handler1, args1, handler2, args2))
 
+  @doc "See `GenEvent.which_handlers/1`."
   def which_handlers(plugin), do: Agent.get plugin, &(GenEvent.which_handlers(&1.event_manager))
 
 end
