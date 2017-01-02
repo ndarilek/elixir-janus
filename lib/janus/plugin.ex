@@ -2,12 +2,20 @@ import Janus.Util
 
 defmodule Janus.Plugin do
 
+  @moduledoc """
+  Send messages, trickle candidates, and detach plugins from Janus sessions.
+  """
+
   @enforce_keys [:id, :base_url, :event_manager]
   defstruct [
     :id,
     :base_url,
     :event_manager
   ]
+
+  @doc """
+  Send `body` as a message to the specified plugin, along with an optional JSEP payload.
+  """
 
   def message(pid, body, jsep \\ nil) do
     plugin = Agent.get(pid, &(&1))
@@ -16,6 +24,10 @@ defmodule Janus.Plugin do
     post(plugin.base_url, msg)
   end
 
+  @doc """
+  Hang up any Web RTC connections associated with this plugin.
+  """
+
   def hangup(pid) do
     plugin = Agent.get(pid, &(&1))
     case post(plugin.base_url, %{janus: :hangup}) do
@@ -23,6 +35,15 @@ defmodule Janus.Plugin do
       v -> v
     end
   end
+
+  @doc """
+  Trickle ICE candidates to this plugin.
+
+  `candidates` is one or more of the following:
+  * A single ICE candidate as a map.
+  * A list of ICE candidate maps.
+  * `nil`, meaning trickling is completed.
+  """
 
   def trickle(pid, candidates \\ nil) do
     msg = %{janus: :trickle}
@@ -34,6 +55,12 @@ defmodule Janus.Plugin do
     plugin = Agent.get(pid, &(&1))
     post(plugin.base_url, msg)
   end
+
+  @doc """
+  Detaches this plugin from its session.
+
+  Once this plugin is detached, it is invalid and can no longer be used.
+  """
 
   def detach(pid) do
     base_url = Agent.get(pid, &(&1.base_url))
