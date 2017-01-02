@@ -1,4 +1,5 @@
 defmodule JanusTest do
+  import Janus.Bypass
   use ExUnit.Case, async: true
   doctest Janus
 
@@ -16,7 +17,7 @@ defmodule JanusTest do
         assert conn.method == "GET"
         Plug.Conn.resp(conn, 200, response)
       end
-      {:ok, info} = Janus.info("http://localhost:#{bypass.port}/janus")
+      {:ok, info} = Janus.info(endpoint_url(bypass))
       assert is_map(info)
     end
 
