@@ -4,6 +4,10 @@ import Janus.Util
 
 defmodule Janus.Session do
 
+  @moduledoc """
+  Sessions are connections to the Janus server to which plugins are attached, and from which events are retrieved.
+  """
+
   @enforce_keys [:id, :base_url, :event_manager]
   defstruct [
     :id,
@@ -11,6 +15,13 @@ defmodule Janus.Session do
     :event_manager,
     handles: %{}
   ]
+
+  @doc """
+  Creates an unstarted session with the server at `url`.
+
+  Note that if `start/1` is not called within the session timeout, then the session will be invalid.
+  Use this function if you must perform additional configuration steps before the session is started.
+  """
 
   def init(url) do
     case post(url, %{janus: :create}) do
@@ -27,6 +38,8 @@ defmodule Janus.Session do
     end
   end
 
+  @doc "Starts an existing session previously created via `init/1`."
+
   def start(pid) when is_pid(pid), do: poll(pid)
 
   def start(url) do
@@ -37,6 +50,15 @@ defmodule Janus.Session do
       v -> v
     end
   end
+
+  @doc """
+  Attaches the plugin identified by `id` to the specified session.
+
+  ## Examples
+
+      {:ok, session} = Janus.Session.start("http://localhost:8088/janus")
+      session |> Janus.Session.attach_plugin("janus.plugin.echotest")
+  """
 
   def attach_plugin(pid, id) do
     base_url = Agent.get(pid, &(&1.base_url))
@@ -59,6 +81,8 @@ defmodule Janus.Session do
     end
     v
   end
+
+  @doc "Destroys the session, detaching all plugins, and freeing all allocated resources."
 
   def destroy(pid) do
     base_url = Agent.get(pid, &(&1.base_url))
