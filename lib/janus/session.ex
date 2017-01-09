@@ -87,7 +87,11 @@ defmodule Janus.Session do
   def destroy(pid) do
     base_url = Agent.get(pid, &(&1.base_url))
     plugin_pids = Agent.get(pid, &(&1.handles)) |> Map.values()
-    plugin_pids.each(&(Janus.Plugin.detach(&1)))
+    IO.puts "See plugin pids"
+    IO.inspect plugin_pids
+    Enum.each (plugin_pids), fn (pid) ->
+      Janus.Plugin.detach pid
+    end
     Agent.stop(pid)
     post(base_url, %{janus: :destroy})
   end
@@ -124,16 +128,16 @@ defmodule Janus.Session do
           event_manager = session.event_manager
           case data do
             %{janus: "keepalive"} -> GenEvent.notify(event_manager, {:keepalive})
-            %{janus: "event", plugindata: plugindata} ->
+            %{janus: "event", plugindata: plugindata, sender: sender} ->
               jsep = data[:jsep]
-              GenEvent.notify(event_manager, {:event, pid, data, jsep})
+              GenEvent.notify(event_manager, {:event, pid, data, jsep, sender})
             %{sender: sender} ->
               plugin_pid = session.handles[sender]
               if plugin_pid do
                 case data do
                   %{janus: "event", plugindata: plugindata} ->
                     jsep = data[:jsep]
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:event, plugindata.data, jsep}))
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:event, plugindata.data, jsep, sender}))
                   %{janus: "webrtcup"} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:webrtcup, sender}))
                   %{janus: "media", type: type, receiving: receiving} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:media, sender, type, receiving}))
                   %{janus: "slowlink", uplink: uplink, nacks: nacks} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:slowlink, sender, uplink, nacks}))
