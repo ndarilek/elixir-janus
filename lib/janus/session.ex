@@ -128,16 +128,16 @@ defmodule Janus.Session do
           event_manager = session.event_manager
           case data do
             %{janus: "keepalive"} -> GenEvent.notify(event_manager, {:keepalive})
-            %{janus: "event", plugindata: plugindata, sender: sender} ->
+            %{janus: "event", plugindata: plugindata} ->
               jsep = data[:jsep]
-              GenEvent.notify(event_manager, {:event, pid, data, jsep, sender})
+              GenEvent.notify(event_manager, {:event, pid, data, jsep})
             %{sender: sender} ->
               plugin_pid = session.handles[sender]
               if plugin_pid do
                 case data do
                   %{janus: "event", plugindata: plugindata} ->
                     jsep = data[:jsep]
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:event, plugindata.data, jsep, sender}))
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:event, plugindata.data, jsep}))
                   %{janus: "webrtcup"} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:webrtcup, sender}))
                   %{janus: "media", type: type, receiving: receiving} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:media, sender, type, receiving}))
                   %{janus: "slowlink", uplink: uplink, nacks: nacks} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:slowlink, sender, uplink, nacks}))
