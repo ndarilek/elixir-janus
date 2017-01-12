@@ -46,6 +46,9 @@ defmodule Janus.Util do
     end
   end
 
+  def maybe_add_key(map, _key, nil), do: map
+  def maybe_add_key(map, key, value), do: Map.put(map, key, value)
+
   defp transaction_id, do: :rand.uniform(1000000000) |> to_string
 
   defp add_transaction_id(body) do
