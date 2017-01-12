@@ -124,9 +124,6 @@ defmodule Janus.Session do
           event_manager = session.event_manager
           case data do
             %{janus: "keepalive"} -> GenEvent.notify(event_manager, {:keepalive})
-            %{janus: "event", plugindata: plugindata} ->
-              jsep = data[:jsep]
-              GenEvent.notify(event_manager, {:event, pid, data, jsep})
             %{sender: sender} ->
               plugin_pid = session.handles[sender]
               if plugin_pid do
