@@ -19,9 +19,8 @@ defmodule Janus.Plugin do
 
   def message(pid, body, jsep \\ nil) do
     plugin = Agent.get(pid, &(&1))
-    msg = %{body: body}
-    if jsep, do: Map.put(msg, :jsep, jsep)
-    post(plugin.base_url, msg)
+    msg = %{body: body, janus: "message"}
+    post(plugin.base_url, maybe_add_key(msg, :jsep, jsep))
   end
 
   @doc """
@@ -47,7 +46,7 @@ defmodule Janus.Plugin do
 
   def trickle(pid, candidates \\ nil) do
     msg = %{janus: :trickle}
-    case candidates do
+    msg = case candidates do
       nil -> Map.put(msg, :candidate, %{completed: true})
       v when is_list(v) -> Map.put(msg, :candidates, v)
       v when is_map(v) -> Map.put(msg, :candidate, v)
