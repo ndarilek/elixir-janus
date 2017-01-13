@@ -123,20 +123,22 @@ defmodule Janus.Session do
         {:ok, data} ->
           event_manager = session.event_manager
           case data do
-            %{janus: "keepalive"} -> GenEvent.notify(event_manager, {:keepalive})
+            %{janus: "keepalive"} -> GenEvent.notify(event_manager, {:keepalive, pid})
             %{sender: sender} ->
               plugin_pid = session.handles[sender]
               if plugin_pid do
                 case data do
                   %{janus: "event", plugindata: plugindata} ->
                     jsep = data[:jsep]
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:event, plugindata.data, jsep}))
-                  %{janus: "webrtcup"} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:webrtcup}))
-                  %{janus: "media", type: type, receiving: receiving} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:media, type, receiving}))
-                  %{janus: "slowlink", uplink: uplink, nacks: nacks} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:slowlink, uplink, nacks}))
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:event, plugin_pid, plugindata.data, jsep}))
+                  %{janus: "webrtcup"} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:webrtcup, plugin_pid}))
+                  %{janus: "media", type: type, receiving: receiving} ->
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:media, plugin_pid, type, receiving}))
+                  %{janus: "slowlink", uplink: uplink, nacks: nacks} ->
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:slowlink, plugin_pid, uplink, nacks}))
                   %{janus: "hangup"} ->
                     reason = data[:reason]
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:hangup, reason}))
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:hangup, plugin_pid, reason}))
                 end
               end
             _ -> nil
