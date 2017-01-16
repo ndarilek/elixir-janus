@@ -125,6 +125,8 @@ defmodule Janus.Session do
           case data do
             %{janus: "keepalive"} -> GenEvent.notify(event_manager, {:keepalive, pid})
             %{sender: sender} ->
+              # Refetch the session in case we've added new plugins while this poll was in flight.
+              session = Agent.get pid, &(&1)
               plugin_pid = session.handles[sender]
               if plugin_pid do
                 case data do
