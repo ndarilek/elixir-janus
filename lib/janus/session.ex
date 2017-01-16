@@ -132,15 +132,15 @@ defmodule Janus.Session do
                 case data do
                   %{janus: "event", plugindata: plugindata} ->
                     jsep = data[:jsep]
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:event, plugin_pid, plugindata.data, jsep}))
-                  %{janus: "webrtcup"} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:webrtcup, plugin_pid}))
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:event, pid, plugin_pid, plugindata.data, jsep}))
+                  %{janus: "webrtcup"} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:webrtcup, pid, plugin_pid}))
                   %{janus: "media", type: type, receiving: receiving} ->
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:media, plugin_pid, type, receiving}))
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:media, pid, plugin_pid, type, receiving}))
                   %{janus: "slowlink", uplink: uplink, nacks: nacks} ->
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:slowlink, plugin_pid, uplink, nacks}))
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:slowlink, pid, plugin_pid, uplink, nacks}))
                   %{janus: "hangup"} ->
                     reason = data[:reason]
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:hangup, plugin_pid, reason}))
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:hangup, pid, plugin_pid, reason}))
                 end
               end
             _ -> nil
