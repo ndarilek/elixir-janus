@@ -136,6 +136,9 @@ defmodule Janus.Session do
                   %{janus: "webrtcup"} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:webrtcup, pid, plugin_pid}))
                   %{janus: "media", type: type, receiving: receiving} ->
                     Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:media, pid, plugin_pid, type, receiving}))
+                    if (receiving == false) do
+                      Janus.Plugin.detach(plugin_pid)
+                    end
                   %{janus: "slowlink", uplink: uplink, nacks: nacks} ->
                     Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:slowlink, pid, plugin_pid, uplink, nacks}))
                   %{janus: "hangup"} ->
