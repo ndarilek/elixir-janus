@@ -141,6 +141,8 @@ defmodule Janus.Session do
                   %{janus: "hangup"} ->
                     reason = data[:reason]
                     Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:hangup, pid, plugin_pid, reason}))
+                  %{janus: "detached"} ->
+                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:detached, pid, plugin_pid}))
                 end
               end
             _ -> nil
