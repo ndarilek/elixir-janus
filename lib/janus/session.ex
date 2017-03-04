@@ -32,7 +32,7 @@ defmodule Janus.Session do
         }
         name = UUID.uuid4()
         {:ok, pid} = Agent.start_link(fn -> session end, name: {:global, name})
-        poll(pid)
+        spawn_link(fn () -> poll(pid) end)
         {:ok, pid}
       v -> v
     end
@@ -106,39 +106,37 @@ defmodule Janus.Session do
 
   defp poll(pid) do
     session = Agent.get pid, &(&1)
-    spawn fn ->
-      case get(session.base_url) do
-        {:ok, data} ->
-          event_manager = session.event_manager
-          case data do
-            %{janus: "keepalive"} -> GenEvent.notify(event_manager, {:keepalive, pid})
-            %{sender: sender} ->
-              # Refetch the session in case we've added new plugins while this poll was in flight.
-              session = Agent.get pid, &(&1)
-              plugin_pid = session.handles[sender]
-              if plugin_pid do
-                case data do
-                  %{janus: "event", plugindata: plugindata} ->
-                    jsep = data[:jsep]
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:event, pid, plugin_pid, plugindata.data, jsep}))
-                  %{janus: "webrtcup"} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:webrtcup, pid, plugin_pid}))
-                  %{janus: "media", type: type, receiving: receiving} ->
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:media, pid, plugin_pid, type, receiving}))
-                  %{janus: "slowlink", uplink: uplink, nacks: nacks} ->
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:slowlink, pid, plugin_pid, uplink, nacks}))
-                  %{janus: "hangup"} ->
-                    reason = data[:reason]
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:hangup, pid, plugin_pid, reason}))
-                  %{janus: "detached"} ->
-                    Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:detached, pid, plugin_pid}))
-                end
+    case get(session.base_url) do
+      {:ok, data} ->
+        event_manager = session.event_manager
+        case data do
+          %{janus: "keepalive"} -> GenEvent.notify(event_manager, {:keepalive, pid})
+          %{sender: sender} ->
+            # Refetch the session in case we've added new plugins while this poll was in flight.
+            session = Agent.get pid, &(&1)
+            plugin_pid = session.handles[sender]
+            if plugin_pid do
+              case data do
+                %{janus: "event", plugindata: plugindata} ->
+                  jsep = data[:jsep]
+                  Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:event, pid, plugin_pid, plugindata.data, jsep}))
+                %{janus: "webrtcup"} -> Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:webrtcup, pid, plugin_pid}))
+                %{janus: "media", type: type, receiving: receiving} ->
+                  Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:media, pid, plugin_pid, type, receiving}))
+                %{janus: "slowlink", uplink: uplink, nacks: nacks} ->
+                  Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:slowlink, pid, plugin_pid, uplink, nacks}))
+                %{janus: "hangup"} ->
+                  reason = data[:reason]
+                  Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:hangup, pid, plugin_pid, reason}))
+                %{janus: "detached"} ->
+                  Agent.get plugin_pid, &(GenEvent.notify(&1.event_manager, {:detached, pid, plugin_pid}))
               end
-            _ -> nil
-          end
-          poll(pid)
-        {:error, reason} -> Logger.error(reason)
-        {:error, :invalid, _} -> nil
-      end
+            end
+          _ -> nil
+        end
+        poll(pid)
+      {:error, reason} -> Logger.error(reason)
+      {:error, :invalid, _} -> nil
     end
   end
 
