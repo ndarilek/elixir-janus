@@ -91,4 +91,8 @@ defmodule Janus.Plugin do
   @doc "See `GenEvent.which_handlers/1`."
   def which_handlers(plugin), do: Agent.get plugin, &(GenEvent.which_handlers(&1.event_manager))
 
+  def start_link(plugin, name) do
+    Agent.start_link(fn() -> plugin end, name: {:global, name})
+  end
+
 end
