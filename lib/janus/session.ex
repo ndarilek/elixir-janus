@@ -33,7 +33,8 @@ defmodule Janus.Session do
           base_url: "#{url}/#{id}",
           event_manager: event_manager
         }
-        Agent.start(fn -> session end)
+        name = UUID.uuid4()
+        Agent.start_link(fn -> session end, name: {:global, name})
       v -> v
     end
   end
@@ -42,7 +43,9 @@ defmodule Janus.Session do
 
   def start(pid) when is_pid(pid), do: poll(pid)
 
-  def start(url) do
+  def start(url), do: Supervisor.start_child(Janus.Supervisor, [url])
+
+  def start_link(url) do
     case init(url) do
       {:ok, pid} ->
         start(pid)
@@ -71,12 +74,13 @@ defmodule Janus.Session do
           base_url: "#{base_url}/#{id}",
           event_manager: event_manager
         }
-        {:ok, plugin_pid} = Agent.start(fn -> plugin end)
+        name = UUID.uuid4()
+        {:ok, plugin_pid} = Agent.start_link(fn -> plugin end, name: {:global, name})
         Agent.update pid, fn(session) ->
           new_handles = Map.put(session.handles, id, plugin_pid)
           %{ session | handles: new_handles}
         end
-        {:ok, plugin_pid}
+        {:ok, name}
       v -> v
     end
     v

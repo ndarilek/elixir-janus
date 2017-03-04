@@ -47,6 +47,7 @@ defmodule Janus.Mixfile do
       {:httpoison, "~> 0.10"},
       {:poison, "~> 3.1"},
       {:ex_doc, "~> 0.14", only: :dev},
+      {:uuid, "~> 1.1"},
       {:bypass, "~> 0.1", only: :test}
     ]
   end
