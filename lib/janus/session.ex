@@ -16,14 +16,11 @@ defmodule Janus.Session do
     handles: %{}
   ]
 
-  @doc """
-  Creates an unstarted session with the server at `url`.
+  @doc "Creates a `Session` with the server at `url`."
 
-  Note that if `start/1` is not called within the session timeout, then the session will be invalid.
-  Use this function if you must perform additional configuration steps before the session is started.
-  """
+  def start(url), do: Supervisor.start_child(Janus.Supervisor, [url])
 
-  def init(url) do
+  def start_link(url) do
     case post(url, %{janus: :create}) do
       {:ok, body} ->
         id = body.data.id
@@ -34,21 +31,8 @@ defmodule Janus.Session do
           event_manager: event_manager
         }
         name = UUID.uuid4()
-        Agent.start_link(fn -> session end, name: {:global, name})
-      v -> v
-    end
-  end
-
-  @doc "Starts an existing session previously created via `init/1`."
-
-  def start(pid) when is_pid(pid), do: poll(pid)
-
-  def start(url), do: Supervisor.start_child(Janus.Supervisor, [url])
-
-  def start_link(url) do
-    case init(url) do
-      {:ok, pid} ->
-        start(pid)
+        {:ok, pid} = Agent.start_link(fn -> session end, name: {:global, name})
+        poll(pid)
         {:ok, pid}
       v -> v
     end
