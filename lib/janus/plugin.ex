@@ -17,8 +17,8 @@ defmodule Janus.Plugin do
   Send `body` as a message to the specified plugin, along with an optional JSEP payload.
   """
 
-  def message(pid, body, jsep \\ nil) do
-    plugin = Agent.get(pid, &(&1))
+  def message(handle, body, jsep \\ nil) do
+    plugin = Agent.get({:global, handle}, &(&1))
     msg = %{body: body, janus: "message"}
     post(plugin.base_url, maybe_add_key(msg, :jsep, jsep))
   end
@@ -27,8 +27,8 @@ defmodule Janus.Plugin do
   Hang up any Web RTC connections associated with this plugin.
   """
 
-  def hangup(pid) do
-    plugin = Agent.get(pid, &(&1))
+  def hangup(handle) do
+    plugin = Agent.get({:global, handle}, &(&1))
     case post(plugin.base_url, %{janus: :hangup}) do
       {:ok, _} -> :ok
       v -> v
@@ -44,14 +44,14 @@ defmodule Janus.Plugin do
   * `nil`, meaning trickling is completed.
   """
 
-  def trickle(pid, candidates \\ nil) do
+  def trickle(handle, candidates \\ nil) do
     msg = %{janus: :trickle}
     msg = case candidates do
       nil -> Map.put(msg, :candidate, %{completed: true})
       v when is_list(v) -> Map.put(msg, :candidates, v)
       v when is_map(v) -> Map.put(msg, :candidate, v)
     end
-    plugin = Agent.get(pid, &(&1))
+    plugin = Agent.get({:global, handle}, &(&1))
     post(plugin.base_url, msg)
   end
 
@@ -61,10 +61,10 @@ defmodule Janus.Plugin do
   Once this plugin is detached, it is invalid and can no longer be used.
   """
 
-  def detach(pid) do
-    base_url = Agent.get(pid, &(&1.base_url))
+  def detach(handle) do
+    base_url = Agent.get({:global, handle}, &(&1.base_url))
     post(base_url, %{janus: :detach})
-    Agent.stop(pid)
+    Agent.stop({:global, handle})
   end
 
   @doc "See `GenEvent.add_handler/3`."
