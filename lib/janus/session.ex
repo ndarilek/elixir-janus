@@ -120,7 +120,7 @@ defmodule Janus.Session do
 
   def destroy(pid) do
     base_url = Agent.get(pid, & &1.base_url)
-    cookie = Agent.get(pid, & &1.base_url)
+    cookie = Agent.get(pid, & &1.cookie)
 
     IO.inspect("destroy..  cookie.. should never be nil ": cookie)
 
