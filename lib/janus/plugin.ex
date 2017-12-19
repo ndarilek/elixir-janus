@@ -1,7 +1,6 @@
 import Janus.Util
 
 defmodule Janus.Plugin do
-
   @moduledoc """
   Send messages, trickle candidates, and detach plugins from Janus sessions.
   """
@@ -10,7 +9,8 @@ defmodule Janus.Plugin do
   defstruct [
     :id,
     :base_url,
-    :event_manager
+    :event_manager,
+    :cookie
   ]
 
   @doc """
@@ -18,9 +18,9 @@ defmodule Janus.Plugin do
   """
 
   def message(pid, body, jsep \\ nil) do
-    plugin = Agent.get(pid, &(&1))
+    plugin = Agent.get(pid, & &1)
     msg = %{body: body, janus: "message"}
-    post(plugin.base_url, maybe_add_key(msg, :jsep, jsep))
+    post(plugin.base_url, plugin.cookie, maybe_add_key(msg, :jsep, jsep))
   end
 
   @doc """
@@ -28,8 +28,9 @@ defmodule Janus.Plugin do
   """
 
   def hangup(pid) do
-    plugin = Agent.get(pid, &(&1))
-    case post(plugin.base_url, %{janus: :hangup}) do
+    plugin = Agent.get(pid, & &1)
+
+    case post(plugin.base_url, plugin.cookie, %{janus: :hangup}) do
       {:ok, _} -> :ok
       v -> v
     end
@@ -46,13 +47,16 @@ defmodule Janus.Plugin do
 
   def trickle(pid, candidates \\ nil) do
     msg = %{janus: :trickle}
-    msg = case candidates do
-      nil -> Map.put(msg, :candidate, %{completed: true})
-      v when is_list(v) -> Map.put(msg, :candidates, v)
-      v when is_map(v) -> Map.put(msg, :candidate, v)
-    end
-    plugin = Agent.get(pid, &(&1))
-    post(plugin.base_url, msg)
+
+    msg =
+      case candidates do
+        nil -> Map.put(msg, :candidate, %{completed: true})
+        v when is_list(v) -> Map.put(msg, :candidates, v)
+        v when is_map(v) -> Map.put(msg, :candidate, v)
+      end
+
+    plugin = Agent.get(pid, & &1)
+    post(plugin.base_url, plugin.cookie, msg)
   end
 
   @doc """
@@ -62,8 +66,9 @@ defmodule Janus.Plugin do
   """
 
   def detach(pid) do
-    base_url = Agent.get(pid, &(&1.base_url))
-    post(base_url, %{janus: :detach})
+    base_url = Agent.get(pid, & &1.base_url)
+    cookie = Agent.get(pid, & &1.cookie)
+    post(base_url, cookie, %{janus: :detach})
     Agent.stop(pid)
   end
 
