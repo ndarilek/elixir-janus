@@ -10,7 +10,8 @@ defmodule Janus.Plugin do
     :id,
     :base_url,
     :event_manager,
-    :cookie
+    :cookie,
+    :room_number
   ]
 
   @doc """
@@ -20,7 +21,18 @@ defmodule Janus.Plugin do
   def message(pid, body, jsep \\ nil) do
     plugin = Agent.get(pid, & &1)
     msg = %{body: body, janus: "message"}
+
+    if body and body.request == "join" and body.request == "start" and body.request == "exists" do
+      msg = maybe_add_key(msg, :room, plugin.room_number)
+    end
+
+    IO.inspect("Sending Janus message": msg)
     post(plugin.base_url, plugin.cookie, maybe_add_key(msg, :jsep, jsep))
+  end
+
+  def create(plugin_base_url, body, cookie) do
+    msg = %{body: body, janus: "message"}
+    post(plugin_base_url, cookie, msg)
   end
 
   @doc """
@@ -73,27 +85,41 @@ defmodule Janus.Plugin do
   end
 
   @doc "See `GenEvent.add_handler/3`."
-  def add_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.add_handler(&1.event_manager, handler, args))
+  def add_handler(plugin, handler, args),
+    do: Agent.get(plugin, &GenEvent.add_handler(&1.event_manager, handler, args))
 
   @doc "See `GenEvent.add_mon_handler/3`."
-  def add_mon_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.add_mon_handler(&1.event_manager, handler, args))
+  def add_mon_handler(plugin, handler, args),
+    do: Agent.get(plugin, &GenEvent.add_mon_handler(&1.event_manager, handler, args))
 
   @doc "See `GenEvent.call/4`."
-  def call(plugin, handler, timeout, request \\ 5000), do: Agent.get plugin, &(GenEvent.call(&1.event_manager, handler, request, timeout))
+  def call(plugin, handler, timeout, request \\ 5000),
+    do: Agent.get(plugin, &GenEvent.call(&1.event_manager, handler, request, timeout))
 
   @doc "See `GenEvent.remove_handler/3`."
-  def remove_handler(plugin, handler, args), do: Agent.get plugin, &(GenEvent.remove_handler(&1.event_manager, handler, args))
+  def remove_handler(plugin, handler, args),
+    do: Agent.get(plugin, &GenEvent.remove_handler(&1.event_manager, handler, args))
 
   @doc "See `GenEvent.stream/2`."
-  def stream(plugin, options \\ []), do: Agent.get plugin, &(GenEvent.stream(&1.event_manager, options))
+  def stream(plugin, options \\ []),
+    do: Agent.get(plugin, &GenEvent.stream(&1.event_manager, options))
 
   @doc "See `GenEvent.swap_handler/5`."
-  def swap_handler(plugin, handler1, args1, handler2, args2), do: Agent.get plugin, &(GenEvent.swap_handler(&1.event_manager, handler1, args1, handler2, args2))
+  def swap_handler(plugin, handler1, args1, handler2, args2),
+    do:
+      Agent.get(
+        plugin,
+        &GenEvent.swap_handler(&1.event_manager, handler1, args1, handler2, args2)
+      )
 
   @doc "See `GenEvent.swap_mon_handler/5`."
-  def swap_mon_handler(plugin, handler1, args1, handler2, args2), do: Agent.get plugin, &(GenEvent.swap_mon_handler(&1.event_manager, handler1, args1, handler2, args2))
+  def swap_mon_handler(plugin, handler1, args1, handler2, args2),
+    do:
+      Agent.get(
+        plugin,
+        &GenEvent.swap_mon_handler(&1.event_manager, handler1, args1, handler2, args2)
+      )
 
   @doc "See `GenEvent.which_handlers/1`."
-  def which_handlers(plugin), do: Agent.get plugin, &(GenEvent.which_handlers(&1.event_manager))
-
+  def which_handlers(plugin), do: Agent.get(plugin, &GenEvent.which_handlers(&1.event_manager))
 end
