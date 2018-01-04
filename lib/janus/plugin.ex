@@ -33,6 +33,12 @@ defmodule Janus.Plugin do
     post(plugin.base_url, plugin.cookie, maybe_add_key(msg, :jsep, jsep))
   end
 
+  def check_room_exists(plugin_base_url, body, cookie) do
+    msg = %{body: body, janus: "message"}
+
+    post(plugin_base_url, cookie, msg)
+  end
+
   def create(plugin_base_url, body, cookie) do
     msg = %{body: body, janus: "message"}
     post(plugin_base_url, cookie, msg)
