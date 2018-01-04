@@ -21,10 +21,14 @@ defmodule Janus.Plugin do
   def message(pid, body, jsep \\ nil) do
     plugin = Agent.get(pid, & &1)
 
+    IO.inspect("~~~ see body ": body)
+
     body =
       if body.request == "join" or body.request == "start" or body.request == "exists" do
+        IO.inspect("~~~ in if ": body.request)
         maybe_add_key(body, :room, plugin.room_number)
       else
+        IO.inspect("~~~ in else ": body.request)
         body
       end
 
