@@ -20,13 +20,16 @@ defmodule Janus.Plugin do
 
   def message(pid, body, jsep \\ nil) do
     plugin = Agent.get(pid, & &1)
+
+    body =
+      if body.request == "join" or body.request == "start" or body.request == "exists" do
+        maybe_add_key(body, :room, plugin.room_number)
+      else
+        body
+      end
+
     msg = %{body: body, janus: "message"}
 
-    if body and body.request == "join" and body.request == "start" and body.request == "exists" do
-      msg = maybe_add_key(msg, :room, plugin.room_number)
-    end
-
-    IO.inspect("Sending Janus message": msg)
     post(plugin.base_url, plugin.cookie, maybe_add_key(msg, :jsep, jsep))
   end
 
