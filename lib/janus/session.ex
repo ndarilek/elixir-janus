@@ -100,7 +100,7 @@ defmodule Janus.Session do
 
           room_number = ConCache.get(:room_number_cache, room_name)
 
-          if room_number != nil do
+          room_number = if room_number != nil do
             room_number =
               case Janus.Plugin.check_room_exists(
                      plugin_base_url,
@@ -121,10 +121,10 @@ defmodule Janus.Session do
                   nil
               end
           else
-            room_number = nil
+            nil
           end
 
-          if room_number == nil do
+          plugin = if room_number == nil do
             IO.puts("Creating new Janus room")
 
             {:ok, response, _cookie} =
@@ -149,7 +149,7 @@ defmodule Janus.Session do
 
             ConCache.put(:room_number_cache, room_name, room_number)
 
-            plugin = %Janus.Plugin{
+            %Janus.Plugin{
               id: id,
               base_url: plugin_base_url,
               event_manager: event_manager,
@@ -159,7 +159,7 @@ defmodule Janus.Session do
           else
             IO.puts("Using existing Janus room")
 
-            plugin = %Janus.Plugin{
+            %Janus.Plugin{
               id: id,
               base_url: plugin_base_url,
               event_manager: event_manager,
